@@ -9,6 +9,7 @@ import sku.sw.model.Schedule;
 
 class Test1 extends JFrame{
     JPanel contentPane=new JPanel();
+    String s;
     
     Test1(){
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
