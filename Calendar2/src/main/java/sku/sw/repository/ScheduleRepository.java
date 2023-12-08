@@ -22,7 +22,7 @@ The implementation is plugged in by Spring Data JPA automatically.
 */
 public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 	
-	  @Query("select  from Schedule s where s.date = :date")
+	  @Query("select s from Schedule s where s.date = :date")
 	  List<Schedule> findByDate(@Param("date") LocalDate date);
 	  
 	  //@Query("select id, date, subject, memo from Schedule a where a.date < :todate and a.date >= :fromdate")
