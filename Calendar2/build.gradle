@@ -1,14 +1,12 @@
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '3.2.0'
-	id 'io.spring.dependency-management' version '1.1.4'
 }
 
 group = 'sku.sw'
 version = '0.0.1-SNAPSHOT'
 
 java {
-	sourceCompatibility = '17'
+	sourceCompatibility = '11'
 }
 
 configurations {
@@ -22,13 +20,18 @@ repositories {
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter'
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	
-	compileOnly 'org.projectlombok:lombok'
-	runtimeOnly 'com.h2database:h2'
+    implementation("org.projectlombok:lombok:1.18.28")
+    testImplementation(platform("org.junit:junit-bom:5.9.1"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+	runtimeOnly 'com.h2database:h2:1.4.187'
+	
 	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	
+	implementation("org.hibernate:hibernate-entitymanager:6.0.0.Alpha7")
+    
+	implementation 'org.slf4j:slf4j-api:2.0.9'
+	testImplementation 'ch.qos.logback:logback-classic:1.4.14'
 }
 
 tasks.named('test') {

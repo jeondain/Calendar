@@ -4,12 +4,10 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
 
-import org.springframework.beans.factory.annotation.Autowired;
 
 import lombok.extern.slf4j.Slf4j;
-import sku.sw.controller.ScheduleController;
+import sku.sw.dao.ScheduleDao;
 import sku.sw.model.Schedule;
-import sku.sw.test.DatePanel;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -22,17 +20,18 @@ import java.util.List;
 @Slf4j
 public class ScheduleDialog extends JDialog {
 
-	ScheduleController scheduleController;
+	ScheduleDao scheduleDao;
+	
 	
     private String selectedDate;
     private JTextArea subjectTextArea;
     private JTextArea scheduleTextArea;
 
-    public ScheduleDialog(JFrame parent, DatePanel dayPanel, ScheduleController scheduleController, int year, int month, int day) {
+    public ScheduleDialog(JFrame parent, DatePanel dayPanel, int year, int month, int day) {
         super(parent, "스케줄 입력", true);
         this.selectedDate = selectedDate;
         
-        this.scheduleController = scheduleController;
+        this.scheduleDao = ScheduleDao.getInstance();
         JPanel schedulePanel = new JPanel(new BorderLayout());
         JPanel inputPanel = new JPanel(new BorderLayout());
         JLabel dateLabel = new JLabel("선택한 날짜: " + year + "/" + month + "/" + day);
@@ -64,10 +63,10 @@ public class ScheduleDialog extends JDialog {
                 
               Schedule s1 = Schedule.builder().date(LocalDate.of(year, month, day)).time(time).subject(subject).memo(schedule).build();
 
-              scheduleController.save(s1);
+              scheduleDao.save(s1);
               
               
-              List<Schedule> list = scheduleController.findAllByMonth(year, month);
+              List<Schedule> list = scheduleDao.findAllByMonth(year, month);
 
 	      		for(Schedule a:list) {
 	      			log.info("{} {} {} [{}]", a.getId(), a.getDate(), a.getTime(), a.getSubject());

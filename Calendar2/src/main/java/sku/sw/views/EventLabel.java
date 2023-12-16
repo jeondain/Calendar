@@ -1,4 +1,4 @@
-package sku.sw.test;
+package sku.sw.views;
 
 import java.awt.Color;
 import java.awt.Graphics;

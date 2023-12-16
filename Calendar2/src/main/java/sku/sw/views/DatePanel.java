@@ -1,4 +1,4 @@
-package sku.sw.test;
+package sku.sw.views;
 
 import java.awt.BorderLayout;
 import java.awt.Color;

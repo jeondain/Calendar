@@ -3,8 +3,6 @@ package sku.sw.views;
 import javax.swing.*;
 import javax.swing.border.Border;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -17,16 +15,16 @@ import java.util.Calendar;
 
 import lombok.extern.slf4j.Slf4j;
 import sku.sw.components.Button;
-import sku.sw.controller.ScheduleController;
+import sku.sw.dao.ScheduleDao;
 import sku.sw.model.Schedule;
-import sku.sw.test.DatePanel;
-import sku.sw.test.EventLabel;
 
 @Slf4j
-@Component
+//@Component
 public class CalendarView extends JFrame {
-	@Autowired
-	ScheduleController scheduleController;
+//	@Autowired
+//	ScheduleController scheduleController;
+	
+	ScheduleDao scheduleDao;
 	
     private JLabel monthYearLabel;
     private JPanel calendarPanel;
@@ -83,6 +81,10 @@ public class CalendarView extends JFrame {
         add(calendarPanel, BorderLayout.CENTER);
 
         currentCalendar = Calendar.getInstance();
+        
+        
+        scheduleDao = ScheduleDao.getInstance();
+        
         //updateCalendar();
 
         //log.info("hi {}", this.getClass());
@@ -132,7 +134,7 @@ public class CalendarView extends JFrame {
             dayPanel.add(dayLabel, BorderLayout.NORTH);
             //Schedule s1 = scheduleController.read(1);
 
-            java.util.List<Schedule> list = scheduleController.findByDate(year, month, i);
+            java.util.List<Schedule> list = scheduleDao.findByDate(year, month, i);
             
             dayPanel.addEvent(list);
             
@@ -161,7 +163,7 @@ public class CalendarView extends JFrame {
                 options[0]);
 
         if (choice == 0) {
-            new ScheduleDialog(this, dayPanel, scheduleController, year, month, day);
+            new ScheduleDialog(this, dayPanel, year, month, day);
 
         } else if (choice == 1) {
             new DiaryDialog(this, year, month, day);
