@@ -1,29 +1,39 @@
 package sku.sw.views;
 
-import javax.swing.*;
-import javax.swing.border.Border;
-
-
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.Calendar;
 
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+import javax.swing.border.Border;
+
+import com.ibm.icu.impl.duration.TimeUnit;
+import com.slack.api.Slack;
+import com.slack.api.methods.MethodsClient;
+import com.slack.api.methods.SlackApiException;
+import com.slack.api.methods.request.chat.ChatPostMessageRequest;
+import com.slack.api.methods.response.chat.ChatPostMessageResponse;
+
 import lombok.extern.slf4j.Slf4j;
-import sku.sw.components.Button;
+import sku.sw.dao.DiaryDao;
 import sku.sw.dao.ScheduleDao;
 import sku.sw.model.Schedule;
 
 @Slf4j
-//@Component
 public class CalendarView extends JFrame {
-//	@Autowired
-//	ScheduleController scheduleController;
-	
+	private static CalendarView instance;
 	ScheduleDao scheduleDao;
 	
     private JLabel monthYearLabel;
@@ -32,8 +42,13 @@ public class CalendarView extends JFrame {
     private JButton diaryButton;
     private JButton prevButton;
     private JButton nextButton;
-    
-    public CalendarView() {
+	Long selectedEvent = 0L;
+	int year;
+	int month;
+	LocalDate now;
+	
+	public CalendarView() {
+    	
         setTitle("캘린더");
         setSize(850, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -46,30 +61,7 @@ public class CalendarView extends JFrame {
         diaryButton = new Button("Diary", Color.WHITE, Color.BLACK);
         diaryButton.setFont(new Font("Arial", Font.BOLD, 15));
         monthYearLabel = new JLabel("", SwingConstants.CENTER);
-
-        prevButton.addActionListener(new ActionListener() { // 이전 달 캘린더로 이동
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                currentCalendar.add(Calendar.MONTH, -1);
-                updateCalendar();
-            }
-        });
-
-        nextButton.addActionListener(new ActionListener() { // 다음 달 캘린더로 이동
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                currentCalendar.add(Calendar.MONTH, 1);
-                updateCalendar();
-            }
-        });
-
-        diaryButton.addActionListener(new ActionListener() { // 다이어리 모음 창으로 이동
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
-            }
-        });
-
+        
         headerPanel.add(prevButton);
         headerPanel.add(monthYearLabel);
         headerPanel.add(nextButton);
@@ -80,26 +72,59 @@ public class CalendarView extends JFrame {
         calendarPanel.setBackground(Color.WHITE);
         add(calendarPanel, BorderLayout.CENTER);
 
-        currentCalendar = Calendar.getInstance();
-        
-        
+        currentCalendar = Calendar.getInstance();    
         scheduleDao = ScheduleDao.getInstance();
         
-        //updateCalendar();
+        now = LocalDate.now();
+    }
+    
+	// 싱글톤 패턴으로 CalendarView의 인스턴스 반환
+	public static CalendarView getInstance() {
+		if (instance == null) {
+			instance = new CalendarView();
+		}
+		return instance;
+	}
 
-        //log.info("hi {}", this.getClass());
+    public void addActionListener() {
+    	// 이전 달 캘린더로 이동
+    	prevButton.addActionListener(new ActionListener() { 
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            	now = now.minusMonths(1);
+                updateCalendar();
+            }
+        });
+
+    	// 다음 달 캘린더로 이동
+        nextButton.addActionListener(new ActionListener() { 
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                now = now.plusMonths(1);
+                updateCalendar();
+            }
+        });
+
+        // 다이어리 목록 창 띄우기
+        diaryButton.addActionListener(new ActionListener() { 
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                DiaryDao diaryDao = DiaryDao.getInstance();
+                updateCalendar();
+                new DiaryList(CalendarView.getInstance(), diaryDao, now.getYear(), now.getMonthValue());
+            }
+        });
     }
 
     public void updateCalendar() {
-        // 현재 달력 패널을 지우고 새로 고침
+    	// 현재 달력 패널을 지우고 새로 고침
         calendarPanel.removeAll();
         calendarPanel.revalidate();
         calendarPanel.repaint();
 
-        // 현재 연도와 월 가져오기
-        int year = currentCalendar.get(Calendar.YEAR);
-        int month = currentCalendar.get(Calendar.MONTH) + 1;
         // 연도와 월 표시 라벨 업데이트
+        year = now.getYear();
+        month = now.getMonthValue();
         monthYearLabel.setText(year + "년 " + month + "월");
         monthYearLabel.setFont(new Font("맑은 고딕", Font.BOLD, 25));
 
@@ -115,60 +140,37 @@ public class CalendarView extends JFrame {
             calendarPanel.add(daysOfWeekLabel);
         }
         
-        for (int i = 1; i < firstDayOfWeek; i++) { // 첫 주 시작일 전까지 빈 라벨 추가하여 간격 맞추기
-            calendarPanel.add(new JLabel(""));
+        // 첫 주 시작일 전까지 빈 라벨 추가하여 간격 맞추기
+        for (int i = 1; i < firstDayOfWeek; i++) { 
+        	JLabel emptyLabel = new JLabel("");
+            calendarPanel.add(emptyLabel);
         }
-        
-//        Schedule s1 = Schedule.builder().date(LocalDate.now()).time(LocalTime.now()).subject("test122").memo("memo122").build();
-//        scheduleController.save(s1);
-
+     
         daysInMonth = YearMonth.of(year, month).atEndOfMonth().getDayOfMonth();
         
-        for (int i = 1; i <= daysInMonth; i++) { // 해당 월의 날짜 수만큼 반복하여 달력에 날짜 표시
-//            JPanel dayPanel = new JPanel(new BorderLayout()); // 날짜 패널
-            DatePanel dayPanel = new DatePanel(year, month, i);
-            dayPanel.setBackground(Color.WHITE);
-            Border blackline = BorderFactory.createMatteBorder(1, 1, 0, 0, Color.black);
-            dayPanel.setBorder(blackline);
-            JLabel dayLabel = new JLabel(String.valueOf(i), SwingConstants.CENTER);
-            dayPanel.add(dayLabel, BorderLayout.NORTH);
-            //Schedule s1 = scheduleController.read(1);
+        // 해당 월의 날짜 수만큼 반복하여 달력에 날짜 표시
+        for (int i = 1; i <= daysInMonth; i++) { 
+            DatePanel datePanel = new DatePanel(year, month, i);
+            datePanel.setBackground(Color.WHITE);
+        	Border blackline = BorderFactory.createEtchedBorder();
+            datePanel.setBorder(blackline);
+            JLabel dateLabel = new JLabel(String.valueOf(i), SwingConstants.CENTER);
+            datePanel.add(dateLabel, BorderLayout.NORTH);
 
             java.util.List<Schedule> list = scheduleDao.findByDate(year, month, i);
+            datePanel.addEvent(list);
             
-            dayPanel.addEvent(list);
-            
-            int day = i;
-            dayPanel.addMouseListener(new java.awt.event.MouseAdapter() {
-                public void mouseClicked(java.awt.event.MouseEvent evt) {
-                    String selectedDate = year + "/" + month + "/" + day ;
-                    openOptionsDialog(dayPanel, year, month, day); // 선택 날짜 다이얼로그  열기
-                }
-            });
-            calendarPanel.add(dayPanel); // 날짜 패널을 달력 패널에 추가
-            dayPanel.updatePanel();
+            calendarPanel.add(datePanel); 
+            datePanel.updatePanel();
         }
     }
+    
+    public Long getSelectedEvent() {
+		return selectedEvent;
+	}
 
-    private void openOptionsDialog(DatePanel dayPanel, int year, int month, int day) {
-        String[] options = {"스케줄 입력", "다이어리 입력"};
-        int choice = JOptionPane.showOptionDialog(
-                calendarPanel,
-                null,
-                "Options",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.PLAIN_MESSAGE,
-                null,
-                options,
-                options[0]);
+	public void setSelectedEvent(Long selectedEvent) {
+		this.selectedEvent = selectedEvent;
+	}
 
-        if (choice == 0) {
-            new ScheduleDialog(this, dayPanel, year, month, day);
-
-        } else if (choice == 1) {
-            new DiaryDialog(this, year, month, day);
-        }
-        
-
-    }
 }

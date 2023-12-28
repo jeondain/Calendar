@@ -14,12 +14,12 @@ import java.util.Date;
 import javax.persistence.*;
 
 
-@NoArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor // 기본 생성자 자동 생성
+@AllArgsConstructor // 모든 필드를 파라미터로 받는 생성자 자동 생성
 @Getter
 @Setter
-@Builder
-@Entity
+@Builder // 객체를 생성, 초기화하는 빌더 메소드 생성
+@Entity // 데이터베이스의 테이블과 매핑
 @Table(name = "Schedule")
 public class Schedule {
     @Id

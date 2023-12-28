@@ -1,4 +1,4 @@
-package sku.sw.components;
+package sku.sw.views;
 
 import javax.swing.*;
 import java.awt.*;
